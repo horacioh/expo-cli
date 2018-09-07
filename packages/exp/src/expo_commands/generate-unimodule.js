@@ -10,13 +10,15 @@ import copy from 'recursive-copy';
 import fsExtra from 'fs-extra';
 import replace from 'replace';
 import os from 'os';
-const npmVersionOfTemplate = '1.0.1';
+
+const NPM_TEMPLATE_VERSION = '1.0.1';
+const TEMP_DIR_NAME = `temp-expo-module-template`;
 
 const decompress = async() => {
   return new Promise((resolve, reject) => {
     targz.decompress({
-        src: `expo-module-template-${npmVersionOfTemplate}.tgz`,
-        dest: 'temp-expo-module-template',
+        src: `expo-module-template-${NPM_TEMPLATE_VERSION}.tgz`,
+        dest: TEMP_DIR_NAME,
       },
       error => {
         if (error) {
@@ -34,7 +36,7 @@ export default (program: any) => {
     .command('generate-unimodule')
     .description('Generate new unimodule.')
     .asyncAction(async () => {
-      let configuration = {
+      const configuration = {
         jsName: null,
         podName: null,
         javaModule: null,
@@ -55,15 +57,15 @@ export default (program: any) => {
         name: 'javaModule'
       })).javaModule;
 
-      proc.execSync(`npm pack expo-module-template@${npmVersionOfTemplate}`);
-      if (!fs.existsSync('temp-expo-module-template')) {
-          fs.mkdirSync('temp-expo-module-template');
+      proc.execSync(`npm pack expo-module-template@${NPM_TEMPLATE_VERSION}`);
+      if (!fs.existsSync(TEMP_DIR_NAME)) {
+          fs.mkdirSync(TEMP_DIR_NAME);
       }
       await decompress();
 
-      fs.unlinkSync(`expo-module-template-${npmVersionOfTemplate}.tgz`);
-      await copy(path.join(`temp-expo-module-template`, `package`), `${configuration.jsName}`);
-      await fsExtra.remove('temp-expo-module-template');
+      fs.unlinkSync(`expo-module-template-${NPM_TEMPLATE_VERSION}.tgz`);
+      await copy(path.join(TEMP_DIR_NAME, `package`), `${configuration.jsName}`);
+      await fsExtra.remove(TEMP_DIR_NAME);
 
       if (configuration.podName) {
           fs.renameSync(
@@ -119,7 +121,7 @@ export default (program: any) => {
       });
 
       await replace({
-        regex: `"version": "[0-9.]+",`,
+        regex: `"version": ".*",`,
         replacement: `"version": "1.0.0",`,
         paths:[path.join(`${configuration.jsName}`, `package.json`)],
         recursive: false,
